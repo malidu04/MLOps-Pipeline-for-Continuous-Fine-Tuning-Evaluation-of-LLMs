@@ -23,6 +23,7 @@
     "morgan": "^1.10.1",
     "path": "^0.12.7",
     "rate-limit-redis": "^4.3.1",
+    "sequelize": "^6.37.7",
     "winston": "^3.19.0"
   }
 }
