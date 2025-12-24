@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "archiver": "^7.0.1",
+    "aws-sdk": "^2.1693.0",
     "bcrypt": "^6.0.0",
     "crypto": "^1.0.1",
     "date-fns": "^4.1.0",
