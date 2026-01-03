@@ -57,15 +57,24 @@ class ModelVersion extends Model {
           type: DataTypes.ARRAY(DataTypes.STRING),
           defaultValue: [],
         },
+        userId: { // Make sure this field exists
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: {
+            model: 'users',
+            key: 'id',
+          },
+        },
       },
       {
         sequelize,
         modelName: 'ModelVersion',
         tableName: 'model_versions',
         timestamps: true,
+        underscored: true, // This makes Sequelize use snake_case for column names
         indexes: [
           {
-            fields: ['userId', 'name', 'version'],
+            fields: ['user_id', 'name', 'version'], // Use snake_case here
             unique: true,
           },
           {

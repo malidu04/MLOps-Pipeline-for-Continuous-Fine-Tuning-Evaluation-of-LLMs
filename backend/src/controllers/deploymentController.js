@@ -1,6 +1,7 @@
 import deploymentService from '../services/deploymentService.js';
 import { AppError } from '../core/errors/AppError.js';
 import logger from '../core/utils/logger.js';
+import axios from 'axios';
 
 class DeploymentController {
   async createDeployment(req, res, next) {
@@ -133,13 +134,18 @@ class DeploymentController {
       });
     } catch (error) {
       // Update error count
-      const deployment = await deploymentService.getDeploymentById(req.user.id, req.params.id);
-      await deployment.updateTraffic(1, 1, 0);
+      try {
+        const deployment = await deploymentService.getDeploymentById(req.user.id, req.params.id);
+        await deployment.updateTraffic(1, 1, 0);
+      } catch (updateError) {
+        logger.error('Failed to update deployment traffic:', updateError);
+      }
       
       next(error);
     }
   }
 
+  // Add these methods if needed
   async updateDeploymentStatus(req, res, next) {
     try {
       // This endpoint is typically called by the ML pipeline or monitoring system
@@ -152,6 +158,22 @@ class DeploymentController {
         metrics,
         healthStatus,
       });
+      
+      res.json({
+        success: true,
+        data: deployment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateDeploymentHealth(req, res, next) {
+    try {
+      const { healthStatus } = req.body;
+      
+      const deployment = await deploymentService.getDeploymentById(req.params.userId, req.params.id);
+      await deployment.updateHealth(healthStatus);
       
       res.json({
         success: true,

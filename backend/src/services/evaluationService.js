@@ -3,7 +3,7 @@ import { AppError } from '../core/errors/AppError.js';
 import { eventEmitter } from '../core/events/EventEmitter.js';
 import { EVENT_TYPES } from '../core/events/eventTypes.js';
 import logger from '../core/utils/logger.js';
-import { evaluationQueue } from '../jobs/queues/evaluationQueue.js';
+import evaluationQueue from '../jobs/queues/evaluationQueue.js';
 import config from '../config/index.js';
 import axios from 'axios';
 
@@ -20,7 +20,7 @@ class EvaluationService {
       }
 
       const evaluation = await Evaluation.create({
-        ...evaluationData,
+        ...evaluationData, 
         userId,
         name: `${model.name} - Evaluation ${new Date().toISOString().split('T')[0]}`,
       });
@@ -160,14 +160,15 @@ class EvaluationService {
       throw new AppError('Some evaluations not found or access denied', 404);
     }
 
-    const comparison = evaluations.map(eval => ({
-      id: eval.id,
-      modelName: eval.model.name,
-      modelVersion: eval.model.version,
-      metrics: eval.metrics,
-      overallScore: eval.getOverallScore(),
-      createdAt: eval.createdAt,
-    }));
+    const comparison = evaluations.map(evaluation => ({
+  id: evaluation.id,
+  modelName: evaluation.model.name,
+  modelVersion: evaluation.model.version,
+  metrics: evaluation.metrics,
+  overallScore: evaluation.getOverallScore(),
+  createdAt: evaluation.createdAt,
+}));
+
 
     // Sort by overall score
     comparison.sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0));
@@ -180,28 +181,29 @@ class EvaluationService {
   }
 
   calculateMetricsSummary(evaluations) {
-    const allMetrics = new Set();
-    evaluations.forEach(eval => {
-      Object.keys(eval.metrics || {}).forEach(metric => allMetrics.add(metric));
-    });
+  const allMetrics = new Set();
+  evaluations.forEach(evaluation => {
+    Object.keys(evaluation.metrics || {}).forEach(metric => allMetrics.add(metric));
+  });
 
-    const summary = {};
-    allMetrics.forEach(metric => {
-      const values = evaluations
-        .map(e => e.metrics?.[metric])
-        .filter(v => typeof v === 'number');
-      
-      if (values.length > 0) {
-        summary[metric] = {
-          min: Math.min(...values),
-          max: Math.max(...values),
-          avg: values.reduce((a, b) => a + b, 0) / values.length,
-        };
-      }
-    });
+  const summary = {};
+  allMetrics.forEach(metric => {
+    const values = evaluations
+      .map(e => e.metrics?.[metric])
+      .filter(v => typeof v === 'number');
 
-    return summary;
-  }
+    if (values.length > 0) {
+      summary[metric] = {
+        min: Math.min(...values),
+        max: Math.max(...values),
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+      };
+    }
+  });
+
+  return summary;
+}
+
 
   async getEvaluationStatistics(userId) {
     const stats = await Evaluation.findAll({

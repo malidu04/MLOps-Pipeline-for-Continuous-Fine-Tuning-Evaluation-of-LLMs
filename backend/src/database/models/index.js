@@ -2,8 +2,28 @@ import { Sequelize, DataTypes } from 'sequelize';
 import config from '../../config/index.js';
 import logger from '../../core/utils/logger.js';
 
+
+console.log('🔍 DB CONFIG USED BY SEQUELIZE:', {
+  database: config.database.database,
+  username: config.database.username,
+  password: config.database.password,
+  host: config.database.host,
+  port: config.database.port,
+});
+
 // Create Sequelize instance
-const sequelize = new Sequelize(config.database);
+const sequelize = new Sequelize(
+  config.database.database,
+  config.database.username,
+  config.database.password,
+  {
+    host: config.database.host,
+    port: config.database.port,
+    dialect: config.database.dialect || 'postgres',
+    logging: false,
+  }
+);
+
 
 // Import models
 import UserModel from './User.js';
@@ -132,7 +152,7 @@ const defineAssociations = () => {
 // Initialize associations
 defineAssociations();
 
-// Export models and sequelize instance
+// Export models and sequelize instance as db object
 const db = {
   sequelize,
   Sequelize,
@@ -148,15 +168,17 @@ const db = {
 // Export individual models for easier imports
 export {
   sequelize,
-  Sequelize,
   User,
   ModelVersion,
   TrainingJob,
   Evaluation,
   Deployment,
   AuditLog,
-  db as default,
+  db, // Export the db object
 };
+
+// Export as default
+export default db;
 
 // Helper function to sync database
 export const syncDatabase = async (options = {}) => {
@@ -217,36 +239,6 @@ export const validateModel = async (modelInstance) => {
     
     return { valid: false, errors };
   }
-};
-
-// Bulk operations helper
-export const bulkCreateWithValidation = async (model, data, options = {}) => {
-  const results = [];
-  const errors = [];
-  
-  for (const item of data) {
-    try {
-      const instance = model.build(item);
-      const validation = await validateModel(instance);
-      
-      if (validation.valid) {
-        await instance.save(options);
-        results.push(instance);
-      } else {
-        errors.push({
-          data: item,
-          errors: validation.errors,
-        });
-      }
-    } catch (error) {
-      errors.push({
-        data: item,
-        errors: [{ message: error.message }],
-      });
-    }
-  }
-  
-  return { results, errors };
 };
 
 // Model statistics
@@ -361,137 +353,3 @@ export const USER_STATUS = {
   SUSPENDED: 'suspended',
   INACTIVE: 'inactive',
 };
-
-// Model scopes
-User.addScope('active', {
-  where: { status: USER_STATUS.ACTIVE },
-});
-
-User.addScope('withModels', {
-  include: [{
-    model: ModelVersion,
-    as: 'models',
-    required: false,
-  }],
-});
-
-ModelVersion.addScope('trained', {
-  where: { status: MODEL_STATUS.TRAINED },
-});
-
-ModelVersion.addScope('withDetails', {
-  include: [
-    {
-      model: TrainingJob,
-      as: 'trainingJobs',
-      limit: 1,
-      order: [['createdAt', 'DESC']],
-      required: false,
-    },
-    {
-      model: Evaluation,
-      as: 'evaluations',
-      limit: 1,
-      order: [['createdAt', 'DESC']],
-      required: false,
-    },
-    {
-      model: Deployment,
-      as: 'deployments',
-      where: { status: DEPLOYMENT_STATUS.ACTIVE },
-      required: false,
-    },
-  ],
-});
-
-TrainingJob.addScope('active', {
-  where: {
-    status: [TRAINING_STATUS.PENDING, TRAINING_STATUS.TRAINING, TRAINING_STATUS.PREPROCESSING],
-  },
-});
-
-TrainingJob.addScope('withModel', {
-  include: [{
-    model: ModelVersion,
-    as: 'model',
-    attributes: ['id', 'name', 'version'],
-  }],
-});
-
-Deployment.addScope('active', {
-  where: { status: DEPLOYMENT_STATUS.ACTIVE },
-});
-
-Deployment.addScope('withModel', {
-  include: [{
-    model: ModelVersion,
-    as: 'model',
-    attributes: ['id', 'name', 'version'],
-  }],
-});
-
-// Model utility functions
-export const findUserWithModels = async (userId) => {
-  return User.scope('withModels').findByPk(userId);
-};
-
-export const findActiveDeployments = async (userId = null) => {
-  const where = userId ? { userId, status: DEPLOYMENT_STATUS.ACTIVE } : { status: DEPLOYMENT_STATUS.ACTIVE };
-  return Deployment.scope('withModel').findAll({ where });
-};
-
-export const findModelWithLatestTraining = async (modelId) => {
-  return ModelVersion.findByPk(modelId, {
-    include: [{
-      model: TrainingJob,
-      as: 'trainingJobs',
-      limit: 1,
-      order: [['createdAt', 'DESC']],
-    }],
-  });
-};
-
-export const bulkUpdateModelStatus = async (modelIds, status) => {
-  return ModelVersion.update(
-    { status },
-    {
-      where: {
-        id: { [Sequelize.Op.in]: modelIds },
-      },
-    }
-  );
-};
-
-// Database transaction helper
-export const withTransaction = async (callback, options = {}) => {
-  const transaction = await sequelize.transaction();
-  
-  try {
-    const result = await callback(transaction);
-    await transaction.commit();
-    return result;
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
-};
-
-// Database migration helper
-export const runMigration = async (migrationFn) => {
-  const transaction = await sequelize.transaction();
-  
-  try {
-    logger.info('Starting migration...');
-    await migrationFn(transaction);
-    await transaction.commit();
-    logger.info('Migration completed successfully');
-    return true;
-  } catch (error) {
-    await transaction.rollback();
-    logger.error('Migration failed:', error);
-    throw error;
-  }
-};
-
-// Export for database/index.js
-export { sequelize };

@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import express from 'express';
 import authController from '../controllers/authController.js';
 import { validate } from '../core/middleware/validation.js';
 import { schemas } from '../core/utils/validator.js';
 import { authLimiter, apiLimiter } from '../core/middleware/rateLimiter.js';
 import { authenticate, optionalAuth } from '../core/middleware/auth.js';
 
-const router = Router();
+const router = express.Router(); // Use express.Router()
 
 // Public routes
 router.post('/register',

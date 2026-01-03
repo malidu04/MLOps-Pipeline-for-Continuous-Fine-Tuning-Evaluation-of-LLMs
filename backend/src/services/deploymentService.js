@@ -3,7 +3,7 @@ import { AppError } from '../core/errors/AppError.js';
 import { eventEmitter } from '../core/events/EventEmitter.js';
 import { EVENT_TYPES } from '../core/events/eventTypes.js';
 import logger from '../core/utils/logger.js';
-import { deploymentQueue } from '../jobs/queues/deploymentQueue.js';
+import  deploymentQueue from '../jobs/queues/deploymentQueue.js';
 import config from '../config/index.js';
 import axios from 'axios';
 import AWS from 'aws-sdk';
@@ -319,6 +319,40 @@ class DeploymentService {
       }, {}),
     };
   }
+  async updateDeployment(deploymentId, updateData) {
+  const deployment = await Deployment.findByPk(deploymentId);
+  if (!deployment) {
+    throw new AppError('Deployment not found', 404);
+  }
+
+  const allowedUpdates = [
+    'status', 'endpoint', 'apiKey', 'metrics', 'resourceUsage',
+    'traffic', 'healthStatus', 'cost', 'externalDeploymentId',
+  ];
+  
+  const updates = {};
+  allowedUpdates.forEach(field => {
+    if (updateData[field] !== undefined) {
+      updates[field] = updateData[field];
+    }
+  });
+
+  if (updateData.status === 'active' && !deployment.deployedAt) {
+    updates.deployedAt = new Date();
+  }
+
+  const previousStatus = deployment.status;
+  await deployment.update(updates);
+
+  // Emit completion event if status changed to active
+  if (previousStatus !== 'active' && deployment.status === 'active') {
+    eventEmitter.emit(EVENT_TYPES.DEPLOYMENT_COMPLETED, deployment);
+  } else if (previousStatus !== 'failed' && deployment.status === 'failed') {
+    eventEmitter.emit(EVENT_TYPES.DEPLOYMENT_FAILED, deployment);
+  }
+
+  return deployment;
+}
 }
 
 export default new DeploymentService();

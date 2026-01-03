@@ -20,6 +20,7 @@ import {
   USER_STATUS,
 } from './models/index.js';
 
+import { Sequelize } from 'sequelize'; // Import Sequelize directly
 import config from '../config/index.js';
 import logger from '../core/utils/logger.js';
 
@@ -44,6 +45,7 @@ export {
   EVALUATION_STATUS,
   USER_ROLES,
   USER_STATUS,
+  Sequelize, // Export Sequelize
 };
 
 // Initialize database connection
@@ -207,4 +209,5 @@ export default {
   EVALUATION_STATUS,
   USER_ROLES,
   USER_STATUS,
+  Sequelize,
 };

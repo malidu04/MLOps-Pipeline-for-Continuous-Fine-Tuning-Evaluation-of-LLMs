@@ -38,12 +38,5 @@ router.post('/:id/progress',
   trainingController.updateTrainingProgress
 );
 
-router.post('/:id/complete',
-  trainingController.completeTrainingJob
-);
-
-router.post('/:id/fail',
-  trainingController.failTrainingJob
-);
 
 export default router;

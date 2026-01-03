@@ -1,11 +1,11 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer as WSServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 import logger from '../core/utils/logger.js';
 import { User } from '../database/models/index.js';
 import { WEBSOCKET_EVENTS } from '../core/events/eventTypes.js';
 
-class WebSocketServer {
+class MLWebSocketServer {
   constructor() {
     this.wss = null;
     this.clients = new Map(); // userId -> WebSocket[]
@@ -13,7 +13,7 @@ class WebSocketServer {
   }
 
   initialize(server) {
-    this.wss = new WebSocketServer({
+    this.wss = new WSServer({
       server,
       path: '/ws',
       clientTracking: true,
@@ -144,7 +144,6 @@ class WebSocketServer {
   handleSubscribe(userId, message) {
     const { channel } = message;
     
-    // In a more complex implementation, you might track subscriptions
     logger.debug(`User ${userId} subscribed to channel: ${channel}`);
     
     this.sendToUser(userId, {
@@ -230,5 +229,5 @@ class WebSocketServer {
   }
 }
 
-export const websocketServer = new WebSocketServer();
+export const websocketServer = new MLWebSocketServer();
 export default websocketServer;

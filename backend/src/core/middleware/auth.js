@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../../config/index.js';
 import { AppError } from '../errors/AppError.js';
-import { User } from '../../database/models/User.js';
+import  User  from '../../database/models/User.js';
 import logger from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {

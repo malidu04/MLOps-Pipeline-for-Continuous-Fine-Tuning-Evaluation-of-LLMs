@@ -3,7 +3,7 @@ import { AppError } from '../core/errors/AppError.js';
 import { eventEmitter } from '../core/events/EventEmitter.js';
 import { EVENT_TYPES } from '../core/events/eventTypes.js';
 import logger from '../core/utils/logger.js';
-import { trainingQueue } from '../jobs/queues/trainingQueue.js';
+import trainingQueue from '../jobs/queues/trainingQueue.js';
 import config from '../config/index.js';
 import axios from 'axios';
 
@@ -217,6 +217,63 @@ class TrainingService {
       recentJobs,
     };
   }
+  async updateTrainingProgress(jobId, progress, message = null) {
+  const job = await TrainingJob.findByPk(jobId);
+  if (!job) {
+    throw new AppError('Training job not found', 404);
+  }
+
+  await job.updateProgress(progress, message);
+
+  eventEmitter.emit(EVENT_TYPES.TRAINING_PROGRESS, {
+    jobId,
+    userId: job.userId,
+    progress,
+    status: job.status,
+    message,
+  });
+
+  return job;
 }
+
+async completeTrainingJob(jobId, metrics) {
+  const job = await TrainingJob.findByPk(jobId);
+  if (!job) {
+    throw new AppError('Training job not found', 404);
+  }
+
+  await job.complete(metrics);
+
+  // Update model status
+  const model = await ModelVersion.findByPk(job.modelId);
+  if (model) {
+    await model.update({ status: 'trained' });
+  }
+
+  eventEmitter.emit(EVENT_TYPES.TRAINING_COMPLETED, job);
+
+  return job;
+}
+
+async failTrainingJob(jobId, error) {
+  const job = await TrainingJob.findByPk(jobId);
+  if (!job) {
+    throw new AppError('Training job not found', 404);
+  }
+
+  await job.fail(error);
+
+  // Update model status
+  const model = await ModelVersion.findByPk(job.modelId);
+  if (model) {
+    await model.update({ status: 'failed' });
+  }
+
+  eventEmitter.emit(EVENT_TYPES.TRAINING_FAILED, { job, error });
+
+  return job;
+}
+}
+
 
 export default new TrainingService();

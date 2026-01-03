@@ -107,6 +107,35 @@ class TrainingController {
       next(error);
     }
   }
+
+  // Add these methods if they're missing
+  async completeTrainingJob(req, res, next) {
+    try {
+      const { metrics } = req.body;
+      const job = await trainingService.completeTrainingJob(req.params.id, metrics);
+      
+      res.json({
+        success: true,
+        data: job,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async failTrainingJob(req, res, next) {
+    try {
+      const { error } = req.body;
+      const job = await trainingService.failTrainingJob(req.params.id, error);
+      
+      res.json({
+        success: true,
+        data: job,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new TrainingController();

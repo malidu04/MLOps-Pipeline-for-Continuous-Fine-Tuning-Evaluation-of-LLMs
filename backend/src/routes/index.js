@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import authRoutes from './authRoutes.js';
 import modelRoutes from './modelRoutes.js';
 import trainingRoutes from './trainingRoutes.js';
@@ -7,7 +7,7 @@ import deploymentRoutes from './deploymentRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import { authenticate } from '../core/middleware/auth.js';
 
-const router = Router();
+const router = express.Router(); // Use express.Router() instead of Router()
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -27,12 +27,12 @@ router.use('/evaluation', authenticate, evaluationRoutes);
 router.use('/deployment', authenticate, deploymentRoutes);
 router.use('/dashboard', authenticate, dashboardRoutes);
 
-// 404 handler
-router.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found',
-  });
-});
+// 404 handler - Remove this from here and handle it in app.js instead
+// router.use('*', (req, res) => {
+//   res.status(404).json({
+//     success: false,
+//     error: 'Route not found',
+//   });
+// });
 
 export default router;

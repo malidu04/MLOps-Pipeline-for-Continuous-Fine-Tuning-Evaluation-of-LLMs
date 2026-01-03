@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import modelController from '../controllers/modelController.js';
 import { validate } from '../core/middleware/validation.js';
 import { schemas } from '../core/utils/validator.js';
@@ -6,7 +6,7 @@ import { validateFile } from '../core/middleware/validation.js';
 import { authorize } from '../core/middleware/auth.js';
 import multer from 'multer';
 
-const router = Router();
+const router = express.Router(); // Use express.Router()
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -61,7 +61,7 @@ router.get('/admin/all',
   authorize('admin'),
   async (req, res, next) => {
     try {
-      const { ModelVersion } = await import('../database/models/index.js');
+      const { ModelVersion, User } = await import('../database/models/index.js');
       const models = await ModelVersion.findAll({
         include: [{ model: User, as: 'user', attributes: ['id', 'email'] }],
       });

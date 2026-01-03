@@ -42,13 +42,5 @@ router.post('/:id/predict',
   deploymentController.makePrediction
 );
 
-// Monitoring webhooks
-router.post('/:id/status',
-  deploymentController.updateDeploymentStatus
-);
-
-router.post('/:id/health',
-  deploymentController.updateDeploymentHealth
-);
 
 export default router;
